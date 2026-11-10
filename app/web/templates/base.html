@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}企业面试 Agent{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/ui">Career Agent</a>
+    <span class="tag">有证据 · 可审核 · 人在回路</span>
+  </header>
+  <main class="page">
+    {% block content %}{% endblock %}
+  </main>
+  <footer>AI 输出仅提供决策辅助，不构成自动录用或淘汰决定。</footer>
+</body>
+</html>
+

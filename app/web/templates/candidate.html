@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}在线面试 · 企业面试 Agent{% endblock %}
+{% block content %}
+<section class="candidate-shell">
+  <p class="eyebrow">在线技术面试</p>
+  {% if completed %}
+    <div class="completion">
+      <div class="completion-icon">✓</div>
+      <h1>回答已提交</h1>
+      <p>本次面试已完成，报告将交由授权审核人员复核。</p>
+      <p class="muted">AI 不会自动作出录用或淘汰决定。</p>
+    </div>
+  {% else %}
+    <div class="row-between">
+      <h1>{% if status == 'awaiting_initial_answer' %}第一轮问题{% else %}补充问题{% endif %}</h1>
+      <span class="status {{ status }}">{{ status_label }}</span>
+    </div>
+    {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+    <article class="question-card">
+      <p class="topic">{{ question.topic }} · {{ question.difficulty }}</p>
+      <h2>{{ question.question }}</h2>
+    </article>
+    <form method="post" action="/ui/interview/{{ token }}/answer" class="stack">
+      <label>你的回答
+        <textarea name="answer" rows="14" required minlength="1" maxlength="20000" placeholder="请结合真实经历说明背景、行动、技术取舍和验证结果"></textarea>
+      </label>
+      <p class="muted small">提交后将无法修改。请勿填写与面试无关的敏感个人信息。</p>
+      <button type="submit">提交本轮回答</button>
+    </form>
+  {% endif %}
+</section>
+{% endblock %}
+

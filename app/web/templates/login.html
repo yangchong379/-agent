@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}内部登录 · 企业面试 Agent{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <p class="eyebrow">内部控制台</p>
+  <h1>登录企业面试 Agent</h1>
+  <p class="muted">密钥只提交给本机服务，登录后不会显示在页面中。</p>
+  {% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+  <form method="post" action="/ui/login" class="stack">
+    <label>企业标识
+      <input name="tenant_id" value="demo-company" required autocomplete="organization">
+    </label>
+    <label>应用访问密钥
+      <input name="api_key" type="password" required autocomplete="current-password">
+    </label>
+    <button type="submit">安全登录</button>
+  </form>
+</section>
+{% endblock %}
+

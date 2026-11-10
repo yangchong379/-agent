@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}工作台 · 企业面试 Agent{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div>
+    <p class="eyebrow">{{ tenant_id }}</p>
+    <h1>招聘面试工作台</h1>
+    <p class="muted">创建资料、发起面试、复制候选人链接并完成人工审核。</p>
+  </div>
+  <form method="post" action="/ui/logout">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button class="secondary" type="submit">退出</button>
+  </form>
+</section>
+
+<section class="panel coach-banner row-between">
+  <div>
+    <p class="eyebrow">持续上下文 · 可控记忆</p>
+    <h2>求职教练对话</h2>
+    <p class="muted">结合简历与目标岗位持续交流，可查看和删除系统记住的信息。</p>
+  </div>
+  <a class="button" href="/ui/coach">进入求职教练</a>
+</section>
+
+{% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+<section class="stats">
+  <article><strong>{{ resumes|length }}</strong><span>候选人资料</span></article>
+  <article><strong>{{ jobs|length }}</strong><span>岗位</span></article>
+  <article><strong>{{ runs|length }}</strong><span>面试</span></article>
+</section>
+
+<section class="grid two">
+  <details class="panel" open>
+    <summary>① 添加候选人简历</summary>
+    <form method="post" action="/ui/resumes" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>资料名称<input name="source_name" value="candidate.txt" required maxlength="200"></label>
+      <label>简历正文<textarea name="resume_text" rows="9" required minlength="20" placeholder="粘贴经过授权的简历正文"></textarea></label>
+      <label class="check"><input type="checkbox" name="consent" value="true" required> 已获得候选人处理授权</label>
+      <button type="submit">解析并保存简历</button>
+    </form>
+  </details>
+
+  <details class="panel" open>
+    <summary>② 添加岗位</summary>
+    <form method="post" action="/ui/jobs" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>岗位名称<input name="title" required maxlength="200"></label>
+      <label>企业名称<input name="company" required maxlength="200"></label>
+      <label>工作城市<input name="city" maxlength="100"></label>
+      <label>职位描述<textarea name="jd_text" rows="7" required minlength="20"></textarea></label>
+      <label>岗位来源链接（可选）<input name="source_url" type="url" placeholder="https://..."></label>
+      <button type="submit">保存岗位</button>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>③ 发起面试</h2>
+  {% if resumes and jobs %}
+  <form method="post" action="/ui/interviews" class="grid interview-create compact">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>选择候选人
+      <select name="resume_id" required>
+        {% for item in resumes %}<option value="{{ item.id }}">{{ item.source_name }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>选择岗位
+      <select name="job_id" required>
+        {% for item in jobs %}<option value="{{ item.id }}">{{ item.title }} · {{ item.company }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>面试轮数
+      <select name="max_turns"><option value="2">2 轮</option><option value="3" selected>3 轮</option><option value="4">4 轮</option><option value="5">5 轮</option><option value="6">6 轮</option></select>
+    </label>
+    <button type="submit">生成面试问题</button>
+  </form>
+  {% else %}
+  <p class="muted">请先至少添加一份简历和一个岗位。</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>面试列表</h2>
+  {% if runs %}
+  <div class="run-list">
+    {% for item in runs %}
+    <article class="run-card">
+      <div class="row-between">
+        <div>
+          <h3>{{ item.resume.source_name if item.resume else '候选人' }} → {{ item.job.title if item.job else '岗位' }}</h3>
+          <p class="muted">{{ item.created_at.strftime('%Y-%m-%d %H:%M') }} · <span class="status {{ item.status_code }}">{{ item.status }}</span></p>
+        </div>
+        {% if item.score is not none %}<strong class="score">{{ item.score }}</strong>{% endif %}
+      </div>
+      <label>候选人链接（24小时有效）
+        <input readonly value="{{ request.url_for('candidate_page', token=item.candidate_token) }}" onclick="this.select()">
+      </label>
+      <div class="actions">
+        <a class="button secondary" href="{{ request.url_for('candidate_page', token=item.candidate_token) }}" target="_blank">预览候选人页面</a>
+        <a class="button" href="{{ request.url_for('review_page', token=item.review_token) }}">查看报告与审核</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}<p class="muted">还没有面试记录。</p>{% endif %}
+</section>
+{% endblock %}
+

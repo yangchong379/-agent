@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ conversation.title }} · 求职教练{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div><p class="eyebrow">求职教练对话</p><h1>{{ conversation.title }}</h1><p class="muted">长期记忆：{{ '已开启' if conversation.memory_enabled else '已关闭' }}</p></div>
+  <a class="button secondary" href="/ui/coach">全部对话与记忆</a>
+</section>
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+<section class="coach-layout">
+  <article class="panel chat-panel">
+    <div class="context-strip">
+      <span>简历：{{ linked_resume.source_name if linked_resume else '发送首条消息后自动使用最近简历' }}</span>
+      <span>目标岗位：{{ linked_job.title if linked_job else '未限定，将比较岗位库' }}</span>
+    </div>
+    <div class="chat-history">
+      {% if messages %}
+        {% for item in messages %}<div class="bubble {{ item.role }}"><span>{{ '你' if item.role == 'user' else '求职教练' }}</span><p>{{ item.content }}</p></div>{% endfor %}
+      {% else %}<div class="empty-chat"><h2>从一个真实问题开始</h2><p class="muted">例如：帮我分析与目标岗位的差距，或模拟一次项目追问。</p></div>{% endif %}
+    </div>
+    <form method="post" action="/ui/coach/{{ conversation.id }}/message" class="quick-actions">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="secondary" name="content" value="帮我推荐最适合的求职岗位，并说明匹配理由" type="submit">推荐岗位</button>
+      <button class="secondary" name="content" value="分析我的简历与目标岗位之间的差距" type="submit">分析差距</button>
+      <button class="secondary" name="content" value="帮我优化简历中的项目经历" type="submit">优化简历</button>
+      <button class="secondary" name="content" value="帮我准备一次模拟面试" type="submit">模拟面试</button>
+      <button class="secondary" name="content" value="根据我的情况生成一个 7 天求职计划" type="submit">7 天计划</button>
+    </form>
+    <form method="post" action="/ui/coach/{{ conversation.id }}/message" class="stack chat-compose">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>还想补充什么？（可选）<textarea name="content" rows="4" required maxlength="20000" placeholder="也可以不输入，直接点击上面的快捷功能"></textarea></label>
+      <button type="submit">发送</button>
+    </form>
+  </article>
+  <aside class="panel memory-sidebar">
+    <h2>长期记忆</h2>
+    <p class="muted small">这些信息会跨对话召回。你可以逐条删除。</p>
+    {% if memories %}{% for item in memories %}<div class="memory-item"><span>{{ item.category }}</span><p>{{ item.content }}</p><form method="post" action="/ui/coach/{{ conversation.id }}/memories/{{ item.id }}/delete"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="danger mini" type="submit">删除</button></form></div>{% endfor %}{% else %}<p class="muted">暂无记忆。</p>{% endif %}
+  </aside>
+</section>
+{% endblock %}

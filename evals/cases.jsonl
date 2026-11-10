@@ -1,0 +1,4 @@
+{"id":"java-01","query":"Java JVM 性能排查有哪些证据","must_contain_any":["JVM","GC","性能"]}
+{"id":"database-01","query":"MySQL 慢查询怎么优化","must_contain_any":["执行计划","索引","慢查询"]}
+{"id":"distributed-01","query":"消息队列如何处理重复消费","must_contain_any":["幂等","重复消费","重试"]}
+

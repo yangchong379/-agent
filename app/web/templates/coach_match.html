@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}岗位匹配分析 · 求职教练{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div><p class="eyebrow">Career Coach</p><h1>{{ job.title }}</h1>
+    <p class="muted">{{ job.company }} · {{ job.city or '地点未注明' }} · 简历：{{ resume.source_name }}</p></div>
+  <a class="button secondary" href="/ui/coach?resume_id={{ resume.id }}">返回求职教练</a>
+</section>
+<section class="panel">
+  <h2>简历技能证据覆盖率</h2>
+  {% if analysis.coverage is not none %}
+    <p><strong class="score">{{ analysis.coverage }}%</strong> · 识别到 {{ analysis.recognized_count }} 项技术条件</p>
+  {% else %}<p>保存的岗位文本中没有识别到可比较的技术条件，因此不计算百分比。</p>{% endif %}
+  <p class="muted">这是对当前岗位文本中可识别技术词的证据覆盖率，不是录用概率，也不评估项目深度、学历、年限或面试表现。没有在简历中找到证据，不等于你不会该技能。</p>
+  {% if analysis.limited %}<p class="alert error">当前保存的可能只是岗位摘要。请打开原始职位页核对完整职责与硬性要求；摘要遗漏的条件不会进入本次计算。</p>{% endif %}
+  {% if job.source_url %}<a href="{{ job.source_url }}" target="_blank" rel="noopener noreferrer">查看原始职位页面</a>{% endif %}
+</section>
+<section class="grid two">
+  <article class="panel">
+    <h2>简历中找到的证据</h2>
+    {% for item in analysis.matched %}
+      <h3>{{ item.skill }}{% if item.required %} · JD 强调{% endif %}</h3>
+      <p>JD：{{ item.jd_excerpt }}</p><p>简历：{{ item.resume_evidence }}</p>
+    {% else %}<p>当前没有找到直接对应的技术证据。</p>{% endfor %}
+  </article>
+  <article class="panel">
+    <h2>需要补充或核实的条件</h2>
+    {% for item in analysis.gaps %}
+      <h3>{{ item.skill }}{% if item.required %} · JD 强调{% endif %}</h3>
+      <p>JD：{{ item.jd_excerpt }}</p><p class="muted">简历未见明确证据；可准备项目实例或补充学习。</p>
+    {% else %}<p>识别出的技术条件均有关键词证据；仍需核对真实项目深度。</p>{% endfor %}
+  </article>
+</section>
+<section class="panel">
+  <h2>继续准备</h2>
+  <p class="muted">岗位与简历已关联。对话适合讨论差距和表达方式；面试练习会使用现有的 LangGraph 准备流程生成针对性问题。</p>
+  <div class="actions">
+    <form method="post" action="/ui/coach">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="resume_id" value="{{ resume.id }}">
+      <input type="hidden" name="job_id" value="{{ job.id }}">
+      <input type="hidden" name="title" value="{{ job.title }} · 岗位准备">
+      <button type="submit">开始岗位辅导对话</button>
+    </form>
+    <form method="post" action="/ui/interviews">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="resume_id" value="{{ resume.id }}">
+      <input type="hidden" name="job_id" value="{{ job.id }}">
+      <input type="hidden" name="max_turns" value="3">
+      <button class="secondary" type="submit">生成针对性面试问题</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

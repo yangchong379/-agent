@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}求职教练 · Career Agent{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div>
+    <p class="eyebrow">Career Coach</p>
+    <h1>求职教练</h1>
+    <p class="muted">把简历、目标岗位、上下文对话和你允许保存的长期记忆组合成连续辅导。</p>
+  </div>
+  <a class="button secondary" href="/ui/dashboard">返回面试工作台</a>
+</section>
+
+{% if message %}<div class="alert success">{{ message }}</div>{% endif %}
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+<details class="panel" {% if not resumes %}open{% endif %}>
+  <summary>先添加我的简历（粘贴或上传）</summary>
+  <p class="muted small">支持 PDF、TXT、Markdown，最大 5MB。邮箱、手机号和身份证号会在进入模型前脱敏。</p>
+  <form method="post" action="/ui/coach/resume" enctype="multipart/form-data" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>简历名称（可选）<input name="source_name" placeholder="例如：Java后端简历"></label>
+    <label>上传文件（可选）<input type="file" name="resume_file" accept=".pdf,.txt,.md"></label>
+    <label>或者直接粘贴简历<textarea name="resume_text" rows="8" placeholder="粘贴简历正文；上传文件后这里可以留空"></textarea></label>
+    <label class="check"><input type="checkbox" name="consent" value="true" required> 我确认有权处理这份简历</label>
+    <button type="submit">保存并解析简历</button>
+  </form>
+</details>
+
+<section class="panel">
+  <h2>从简历寻找岗位方向</h2>
+  <p class="muted">先选简历，再根据简历中的明确技能选择一个方向。城市可留空，留空时展示所有地区的已有岗位；推荐依据会显示在方向旁边。</p>
+  {% if resumes %}
+  <form method="get" action="/ui/coach" class="stack">
+    <label>用于推荐的简历
+      <select name="resume_id">{% for item in resumes %}<option value="{{ item.id }}" {% if selected_resume and item.id == selected_resume.id %}selected{% endif %}>{{ item.source_name }}</option>{% endfor %}</select>
+    </label>
+    <button class="secondary" type="submit">分析这份简历</button>
+  </form>
+  {% if directions %}
+  <form method="get" action="/ui/coach/jobs" class="stack">
+    <input type="hidden" name="resume_id" value="{{ selected_resume.id }}">
+    {% for item in directions %}
+    <label class="check"><input type="radio" name="direction_id" value="{{ item.id }}" {% if loop.first %}checked{% endif %} required>
+      {{ item.title }} · 简历证据：{{ item.evidence|join('、') }}
+    </label>
+    {% endfor %}
+    <label>目标城市或地区（可选）<input name="location" maxlength="100" placeholder="留空查看所有地区；或填深圳、北京等"></label>
+    <label class="check"><input type="checkbox" name="use_qwen" value="true"> 使用千问联网扩展搜索（可能产生 API 费用；只发送方向关键词和城市，不发送简历）</label>
+    <button type="submit">查找这个方向的招聘信息</button>
+  </form>
+  {% else %}<p class="muted">这份简历暂时没有足够明确的岗位技能。请补充具体技术、项目职责或工作经历后重新上传。</p>{% endif %}
+  {% else %}<p class="muted">请先在上方添加简历。</p>{% endif %}
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <h2>开始新对话</h2>
+    <p class="alert success small">最省事的方式：保留默认值并直接点击创建。首次发送消息时会自动读取最近一份简历。</p>
+    <form method="post" action="/ui/coach" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>对话主题<input name="title" value="我的求职计划" required maxlength="200"></label>
+      <label>关联简历
+        <select name="resume_id"><option value="">暂不关联</option>{% for item in resumes %}<option value="{{ item.id }}">{{ item.source_name }}</option>{% endfor %}</select>
+      </label>
+      <label>关联目标岗位
+        <select name="job_id"><option value="">暂不关联</option>{% for item in jobs %}<option value="{{ item.id }}">{{ item.title }} · {{ item.company }}</option>{% endfor %}</select>
+      </label>
+      <label class="check"><input type="checkbox" name="memory_enabled" value="true" checked> 允许保存非敏感求职记忆（可随时删除）</label>
+      <button type="submit">一键开始求职辅导</button>
+    </form>
+  </article>
+  <article class="panel">
+    <h2>记忆管理</h2>
+    <p class="muted small">系统只保存明确表达的目标、偏好、经历和限制，不应保存敏感身份信息。</p>
+    {% if memories %}
+      <div class="memory-list">{% for item in memories %}<div class="memory-item"><span>{{ item.category }}</span><p>{{ item.content }}</p></div>{% endfor %}</div>
+    {% else %}<p class="muted">还没有长期记忆。</p>{% endif %}
+  </article>
+</section>
+
+<section class="panel">
+  <h2>历史对话</h2>
+  {% if conversations %}<div class="run-list">{% for item in conversations %}<a class="conversation-link" href="/ui/coach/{{ item.id }}"><strong>{{ item.title }}</strong><span>{{ item.updated_at.strftime('%Y-%m-%d %H:%M') }}</span></a>{% endfor %}</div>{% else %}<p class="muted">还没有对话，先创建一个。</p>{% endif %}
+</section>
+{% endblock %}

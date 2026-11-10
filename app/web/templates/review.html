@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}报告审核 · 企业面试 Agent{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div>
+    <p class="eyebrow">人工审核</p>
+    <h1>面试证据报告</h1>
+    <p class="muted">逐项核对原始回答、评分依据与模型结论。</p>
+  </div>
+  <span class="status {{ status }}">{{ status_label }}</span>
+</section>
+{% if error %}<div class="alert error">{{ error }}</div>{% endif %}
+
+<section class="grid three stats report-stats">
+  <article><strong>{{ analysis.fit_score }}</strong><span>岗位匹配</span></article>
+  <article><strong>{{ report.final_score if report else '—' }}</strong><span>面试总分</span></article>
+  <article><strong>{{ analysis.evidence_quality }}</strong><span>证据质量</span></article>
+</section>
+
+<section class="grid two">
+  <article class="panel">
+    <h2>匹配优势</h2>
+    <ul>{% for item in analysis.strengths %}<li>{{ item }}</li>{% endfor %}</ul>
+  </article>
+  <article class="panel">
+    <h2>待核验差距</h2>
+    <ul>{% for item in analysis.gaps %}<li>{{ item }}</li>{% endfor %}</ul>
+  </article>
+</section>
+
+{% for turn in turns %}
+<section class="panel evidence-block">
+  <p class="eyebrow">第 {{ turn.number }} 轮</p>
+  <h2>{{ turn.question.question }}</h2>
+  <h3>候选人原始回答</h3>
+  <div class="answer-text">{{ turn.answer or '尚未回答' }}</div>
+  {% if turn.evaluation %}
+  <div class="dimension-grid">
+    {% for name, value in turn.evaluation.dimensions.items() %}
+      <div><span>{{ name }}</span><strong>{{ value }}</strong></div>
+    {% endfor %}
+  </div>
+  <h3>评分反馈</h3>
+  <p>{{ turn.evaluation.feedback }}</p>
+  {% endif %}
+</section>
+{% endfor %}
+
+{% if report %}
+<section class="panel report">
+  <h2>最终报告</h2>
+  <div class="grid two">
+    <div><h3>优势</h3><ul>{% for item in report.strengths %}<li>{{ item }}</li>{% endfor %}</ul></div>
+    <div><h3>不足</h3><ul>{% for item in report.weaknesses %}<li>{{ item }}</li>{% endfor %}</ul></div>
+  </div>
+  <h3>学习建议</h3>
+  <ol>{% for item in report.learning_plan %}<li>{{ item }}</li>{% endfor %}</ol>
+  <h3>决策辅助说明</h3>
+  <p class="note">{{ report.decision_support_note }}</p>
+</section>
+{% endif %}
+
+{% if status == 'pending_human_review' %}
+<section class="panel review-form">
+  <h2>人工审核</h2>
+  <form method="post" action="/ui/review/{{ token }}" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>审核人<input name="reviewer" required maxlength="200"></label>
+    <label>审核意见<textarea name="comment" rows="4" maxlength="2000" required placeholder="说明核验范围和依据；批准报告不等于录用候选人"></textarea></label>
+    <div class="actions">
+      <button type="submit" name="decision" value="approved">批准报告</button>
+      <button class="danger" type="submit" name="decision" value="rejected">退回报告</button>
+    </div>
+  </form>
+</section>
+{% elif review %}
+<section class="panel">
+  <h2>人工审核记录</h2>
+  <p><strong>{{ review.reviewer }}</strong> · {{ review.decision }}</p>
+  <p>{{ review.comment }}</p>
+</section>
+{% else %}
+<div class="alert">候选人尚未完成回答，暂不能审核。</div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}岗位招聘信息 · 求职教练{% endblock %}
+{% block content %}
+<section class="hero row-between">
+  <div><p class="eyebrow">Career Coach</p><h1>{{ direction.title }}</h1>
+    <p class="muted">依据简历「{{ resume.source_name }}」中的 {{ direction.evidence|join('、') }} 推荐；目标地区：{{ location or '不限' }}。</p></div>
+  <a class="button secondary" href="/ui/coach?resume_id={{ resume.id }}">返回选择方向</a>
+</section>
+{% for notice in notices %}<div class="alert error">{{ notice }}</div>{% endfor %}
+<section class="panel">
+  <h2>匹配的岗位信息</h2>
+  <p class="muted">职位名称、公司、地点与要求直接显示在这里。带「岗位快照」的内容仅在标注日期核查过；实时职位源的更新状态也可能变化，投递前请打开原始岗位页确认。</p>
+  {% if jobs %}
+    <div class="run-list">
+    {% for item in jobs %}
+      <article class="panel">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.company }} · {{ item.location }} · {{ item.source }}</p>
+        {% if item.salary %}<p>薪资：{{ item.salary }}</p>{% endif %}
+        {% if item.updated %}<p class="muted">{{ item.updated }}</p>{% endif %}
+        {% if item.snippet %}<p>{{ item.snippet }}</p>{% endif %}
+        <div class="actions">
+          <a class="button secondary" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">打开职位详情</a>
+          {% if item.save_token %}
+          <form method="post" action="/ui/coach/jobs/save">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="job_token" value="{{ item.save_token }}">
+            <button type="submit">保存岗位并分析匹配</button>
+          </form>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+    </div>
+  {% else %}<p>这个方向和地区暂无可核查的具体岗位。可更换城市、方向，或配置实时职位源；不会将搜索结果页伪装为岗位。</p>{% endif %}
+</section>
+{% endblock %}
